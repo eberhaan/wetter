@@ -1,98 +1,122 @@
 <!DOCTYPE html>
-<html lang="de">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Wettervorhersage für Ramsau im Zillertal</title>
+    <title>Wettervorhersage Ramsau im Zillertal</title>
     <style>
         body {
             font-family: Arial, sans-serif;
-            background-color: #f9f6f4;
-            margin: 0;
-            padding: 0;
-            text-align: center;
-        }
-        h1 {
-            color: #a80e0d;
-            padding: 20px;
+            margin: 20px;
+            background-color: #f4f4f9;
+            color: #333;
         }
         .weather-container {
-            display: flex;
-            flex-wrap: wrap;
-            justify-content: center;
+            max-width: 800px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: 1fr;
             gap: 20px;
-            padding: 20px;
+            text-align: center;
         }
         .weather-card {
-            background: #ffffff;
+            background-color: #fff;
             border: 2px solid #a80e0d;
-            border-radius: 12px;
-            padding: 15px;
-            width: 250px;
-            text-align: center;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
         }
-        .weather-card h3 {
+        .weather-card h2 {
             color: #a80e0d;
         }
-        .weather-icon img {
-            width: 80px;
-            height: 80px;
-        }
-        .weather-card p {
+        .weather-icon {
+            font-size: 50px;
             margin: 10px 0;
-            font-size: 1.1em;
-            color: #333;
+        }
+        .temperature {
+            font-size: 1.5em;
+            margin: 10px 0;
+        }
+        .description {
+            font-style: italic;
+            color: #555;
         }
     </style>
 </head>
 <body>
-    <h1>Wettervorhersage für Ramsau im Zillertal</h1>
-    <div class="weather-container" id="weather-container">
+    <h1 style="text-align: center; color: #a80e0d;">Wettervorhersage für Ramsau im Zillertal</h1>
+    <div class="weather-container">
         <p>Wetterdaten werden geladen...</p>
     </div>
 
     <script>
         async function fetchWeather() {
+            const API_URL = 'https://dataset.api.hub.geosphere.at/v1/forecast';
+            const LAT = 47.2087; // Breitenkoordinaten für Ramsau im Zillertal
+            const LON = 11.8677; // Längengrad
+            const API_KEY = 'HIER_IHREN_API_KEY_EINFÜGEN'; // Ersetzen Sie dies durch Ihren API-Key!
+
+            const container = document.querySelector('.weather-container');
+
             try {
-                const endpoint = "https://dataset.api.hub.geosphere.at/v1/endpoint"; // API-Endpunkt hier ersetzen
-                const response = await fetch(endpoint, {
+                // API-Aufruf mit den Geokoordinaten
+                const response = await fetch(`${API_URL}?lat=${LAT}&lon=${LON}`, {
                     headers: {
-                        "Authorization": "Bearer YOUR_API_KEY" // Ihren API-Schlüssel hier einfügen
+                        'Authorization': `Bearer ${API_KEY}` // Authentifizierung
                     }
                 });
+
+                if (!response.ok) {
+                    throw new Error(`API-Fehler: ${response.status}`);
+                }
+
                 const data = await response.json();
 
-                // Beispiel: Filtere Daten für Ramsau im Zillertal
-                const location = "Ramsau im Zillertal";
-                const filteredData = data.filter(item => item.location.includes(location));
+                // Container-Inhalt zurücksetzen
+                container.innerHTML = '';
 
-                const weatherContainer = document.getElementById("weather-container");
-                weatherContainer.innerHTML = "";
+                // Daten verarbeiten und anzeigen
+                const forecasts = data.forecasts.slice(0, 3); // Nur die nächsten 3 Tage
 
-                // Daten für die nächsten 3 Tage anzeigen
-                filteredData.slice(0, 3).forEach(day => {
-                    const card = document.createElement("div");
-                    card.className = "weather-card";
+                forecasts.forEach(forecast => {
+                    const date = new Date(forecast.timestamp * 1000).toLocaleDateString('de-DE', {
+                        weekday: 'long', day: 'numeric', month: 'long'
+                    });
+                    const temp = forecast.temperature; // Temperatur
+                    const description = forecast.condition; // Wetterbeschreibung
+
+                    // Custom-Wettericon
+                    let weatherIcon = '';
+                    if (description.includes('sun') || description.includes('clear')) {
+                        weatherIcon = '☀️'; // Sonne
+                    } else if (description.includes('cloud') && description.includes('rain')) {
+                        weatherIcon = '🌧️'; // Wolken + Regen
+                    } else if (description.includes('snow')) {
+                        weatherIcon = '❄️'; // Schnee
+                    } else if (description.includes('cloud')) {
+                        weatherIcon = '☁️'; // Wolken
+                    } else {
+                        weatherIcon = '🌦️'; // Gemischtes Wetter
+                    }
+
+                    // Wetterkarte erstellen
+                    const card = document.createElement('div');
+                    card.className = 'weather-card';
                     card.innerHTML = `
-                        <h3>${day.date}</h3>
-                        <div class="weather-icon">
-                            <img src="https://openweathermap.org/img/wn/${day.weather.icon}@2x.png" alt="${day.weather.description}">
-                        </div>
-                        <p><strong>${day.weather.description}</strong></p>
-                        <p>🌡️ Min: ${day.temperature.min}°C | Max: ${day.temperature.max}°C</p>
-                        <p>🌧️ Niederschlag: ${day.rain || 0} mm</p>
+                        <h2>${date}</h2>
+                        <div class="weather-icon">${weatherIcon}</div>
+                        <div class="temperature">Temperatur: ${temp.toFixed(1)}°C</div>
+                        <div class="description">${description}</div>
                     `;
-                    weatherContainer.appendChild(card);
+                    container.appendChild(card);
                 });
             } catch (error) {
-                console.error("Fehler beim Abrufen der Wetterdaten:", error);
-                const weatherContainer = document.getElementById("weather-container");
-                weatherContainer.innerHTML = `<p style="color: red;">Fehler beim Laden der Wetterdaten.</p>`;
+                console.error('Fehler beim Laden der Wetterdaten:', error);
+                container.innerHTML = `<p>Fehler beim Laden der Wetterdaten. Bitte später erneut versuchen.</p>`;
             }
         }
 
-        document.addEventListener("DOMContentLoaded", fetchWeather);
+        document.addEventListener('DOMContentLoaded', fetchWeather);
     </script>
 </body>
 </html>
