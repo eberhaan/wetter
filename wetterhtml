@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Wettervorhersage für Ramsau im Zillertal</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f9f6f4;
+            margin: 0;
+            padding: 0;
+            text-align: center;
+        }
+        h1 {
+            color: #a80e0d;
+            padding: 20px;
+        }
+        .weather-container {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 20px;
+            padding: 20px;
+        }
+        .weather-card {
+            background: #ffffff;
+            border: 2px solid #a80e0d;
+            border-radius: 12px;
+            padding: 15px;
+            width: 250px;
+            text-align: center;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+        .weather-card h3 {
+            color: #a80e0d;
+        }
+        .weather-icon img {
+            width: 80px;
+            height: 80px;
+        }
+        .weather-card p {
+            margin: 10px 0;
+            font-size: 1.1em;
+            color: #333;
+        }
+    </style>
+</head>
+<body>
+    <h1>Wettervorhersage für Ramsau im Zillertal</h1>
+    <div class="weather-container" id="weather-container">
+        <p>Wetterdaten werden geladen...</p>
+    </div>
+
+    <script>
+        async function fetchWeather() {
+            try {
+                const endpoint = "https://dataset.api.hub.geosphere.at/v1/endpoint"; // API-Endpunkt hier ersetzen
+                const response = await fetch(endpoint, {
+                    headers: {
+                        "Authorization": "Bearer YOUR_API_KEY" // Ihren API-Schlüssel hier einfügen
+                    }
+                });
+                const data = await response.json();
+
+                // Beispiel: Filtere Daten für Ramsau im Zillertal
+                const location = "Ramsau im Zillertal";
+                const filteredData = data.filter(item => item.location.includes(location));
+
+                const weatherContainer = document.getElementById("weather-container");
+                weatherContainer.innerHTML = "";
+
+                // Daten für die nächsten 3 Tage anzeigen
+                filteredData.slice(0, 3).forEach(day => {
+                    const card = document.createElement("div");
+                    card.className = "weather-card";
+                    card.innerHTML = `
+                        <h3>${day.date}</h3>
+                        <div class="weather-icon">
+                            <img src="https://openweathermap.org/img/wn/${day.weather.icon}@2x.png" alt="${day.weather.description}">
+                        </div>
+                        <p><strong>${day.weather.description}</strong></p>
+                        <p>🌡️ Min: ${day.temperature.min}°C | Max: ${day.temperature.max}°C</p>
+                        <p>🌧️ Niederschlag: ${day.rain || 0} mm</p>
+                    `;
+                    weatherContainer.appendChild(card);
+                });
+            } catch (error) {
+                console.error("Fehler beim Abrufen der Wetterdaten:", error);
+                const weatherContainer = document.getElementById("weather-container");
+                weatherContainer.innerHTML = `<p style="color: red;">Fehler beim Laden der Wetterdaten.</p>`;
+            }
+        }
+
+        document.addEventListener("DOMContentLoaded", fetchWeather);
+    </script>
+</body>
+</html>
