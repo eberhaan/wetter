@@ -11,41 +11,35 @@
             background-color: #f4f4f9;
             color: #333;
         }
+        h1 {
+            text-align: center;
+            color: #a80e0d;
+        }
         .weather-container {
             max-width: 800px;
             margin: 0 auto;
-            display: grid;
-            grid-template-columns: 1fr;
-            gap: 20px;
             text-align: center;
         }
         .weather-card {
-            background-color: #fff;
+            background: #fff;
             border: 2px solid #a80e0d;
             border-radius: 10px;
             padding: 20px;
             box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
         }
         .weather-card h2 {
             color: #a80e0d;
         }
-        .weather-icon {
-            font-size: 50px;
-            margin: 10px 0;
-        }
-        .temperature {
-            font-size: 1.5em;
-            margin: 10px 0;
-        }
-        .description {
-            font-style: italic;
-            color: #555;
+        .error {
+            color: red;
+            font-weight: bold;
         }
     </style>
 </head>
 <body>
-    <h1 style="text-align: center; color: #a80e0d;">Wettervorhersage für Ramsau im Zillertal</h1>
-    <div class="weather-container">
+    <h1>Wettervorhersage für Ramsau im Zillertal</h1>
+    <div class="weather-container" id="weather-container">
         <p>Wetterdaten werden geladen...</p>
     </div>
 
@@ -54,15 +48,14 @@
             const API_URL = 'https://dataset.api.hub.geosphere.at/v1/forecast';
             const LAT = 47.2087; // Breitenkoordinaten für Ramsau im Zillertal
             const LON = 11.8677; // Längengrad
-            const API_KEY = 'HIER_IHREN_API_KEY_EINFÜGEN'; // Ersetzen Sie dies durch Ihren API-Key!
+            const API_KEY = 'curl -X GET "https://dataset.api.hub.geosphere.at/v1/data/locations?lat=47.2462&lon=11.8655" -H "Authorization: Bearer YOUR_API_KEY"'; // Ersetzen Sie dies durch Ihren API-Key!
 
-            const container = document.querySelector('.weather-container');
+            const container = document.getElementById('weather-container');
 
             try {
-                // API-Aufruf mit den Geokoordinaten
                 const response = await fetch(`${API_URL}?lat=${LAT}&lon=${LON}`, {
                     headers: {
-                        'Authorization': `Bearer ${API_KEY}` // Authentifizierung
+                        'Authorization': `Bearer ${API_KEY}`
                     }
                 });
 
@@ -75,44 +68,24 @@
                 // Container-Inhalt zurücksetzen
                 container.innerHTML = '';
 
-                // Daten verarbeiten und anzeigen
-                const forecasts = data.forecasts.slice(0, 3); // Nur die nächsten 3 Tage
+                // Daten für die nächsten 3 Stunden anzeigen
+                data.forecasts.slice(0, 3).forEach(forecast => {
+                    const timestamp = new Date(forecast.timestamp * 1000).toLocaleString('de-DE');
+                    const temp = forecast.temperature;
+                    const condition = forecast.condition;
 
-                forecasts.forEach(forecast => {
-                    const date = new Date(forecast.timestamp * 1000).toLocaleDateString('de-DE', {
-                        weekday: 'long', day: 'numeric', month: 'long'
-                    });
-                    const temp = forecast.temperature; // Temperatur
-                    const description = forecast.condition; // Wetterbeschreibung
-
-                    // Custom-Wettericon
-                    let weatherIcon = '';
-                    if (description.includes('sun') || description.includes('clear')) {
-                        weatherIcon = '☀️'; // Sonne
-                    } else if (description.includes('cloud') && description.includes('rain')) {
-                        weatherIcon = '🌧️'; // Wolken + Regen
-                    } else if (description.includes('snow')) {
-                        weatherIcon = '❄️'; // Schnee
-                    } else if (description.includes('cloud')) {
-                        weatherIcon = '☁️'; // Wolken
-                    } else {
-                        weatherIcon = '🌦️'; // Gemischtes Wetter
-                    }
-
-                    // Wetterkarte erstellen
                     const card = document.createElement('div');
                     card.className = 'weather-card';
                     card.innerHTML = `
-                        <h2>${date}</h2>
-                        <div class="weather-icon">${weatherIcon}</div>
-                        <div class="temperature">Temperatur: ${temp.toFixed(1)}°C</div>
-                        <div class="description">${description}</div>
+                        <h2>${timestamp}</h2>
+                        <p>Temperatur: ${temp}°C</p>
+                        <p>Bedingungen: ${condition}</p>
                     `;
                     container.appendChild(card);
                 });
             } catch (error) {
-                console.error('Fehler beim Laden der Wetterdaten:', error);
-                container.innerHTML = `<p>Fehler beim Laden der Wetterdaten. Bitte später erneut versuchen.</p>`;
+                console.error('Fehler beim Abrufen der Wetterdaten:', error);
+                container.innerHTML = `<p class="error">Fehler beim Laden der Wetterdaten. Bitte später erneut versuchen.</p>`;
             }
         }
 
